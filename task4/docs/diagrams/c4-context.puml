@@ -1,0 +1,22 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Расширение интеграции ставок с кол-центрами - Контекстная диаграмма
+
+Person(OperatorBank, "Оператор кол-центра банка", "Консультирует клиентов по телефону")
+Person(OperatorPartner, "Оператор кол-центра партнера", "Консультирует клиентов по телефону")
+
+System(DepositRateService, "Сервис управления ставками", "Расчет и хранение ставок по депозитам")
+System(CallCenterBank, "Система кол-центра банка", "CRM-система от подрядчика")
+
+System_Ext(PartnerSystem, "Система партнерского кол-центра", "Внешняя система партнера")
+System_Ext(PartnerSFTP, "SFTP-сервер партнера", "Внешний сервер для загрузки файлов")
+
+Rel(OperatorBank, CallCenterBank, "Работает с заявками, консультирует")
+Rel(OperatorPartner, PartnerSystem, "Работает с клиентами, консультирует")
+
+Rel(CallCenterBank, DepositRateService, "Запрашивает актуальные ставки через", "HTTPS/REST")
+Rel(DepositRateService, PartnerSFTP, "Выгружает файл со ставками", "SFTP")
+Rel(PartnerSystem, PartnerSFTP, "Забирает файл для обновления данных", "SFTP")
+
+@enduml
