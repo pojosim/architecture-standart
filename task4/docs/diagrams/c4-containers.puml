@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Расширение интеграции ставок с кол-центрами - Диаграмма контейнеров
+
+Person(OperatorBank, "Оператор кол-центра банка", "Консультирует клиентов")
+Person(OperatorPartner, "Оператор кол-центра партнера", "Консультирует клиентов")
+
+Container(DepositRateService, "Сервис управления ставками", "C# .NET Core", "Расчет и хранение ставок по депозитам")
+ContainerDb(RateDatabase, "База данных ставок", "Microsoft SQL Server", "Хранит продукты и ставки")
+
+Container(CallCenterBank, "Система кол-центра банка", "Java Spring Boot, PostgreSQL", "CRM для кол-центра")
+
+Container(FileExportAdapter, "Адаптер выгрузки файлов", "Java Spring Boot", "Формирование и выгрузка файлов со ставками")
+
+System_Boundary(ExternalSystems, "Контур партнера") {
+    Container_Ext(PartnerSFTP, "SFTP-сервер партнера", "SFTP", "Прием файлов от банка")
+    Container_Ext(PartnerSystem, "Система партнерского кол-центра", "Проприетарная система", "CRM для кол-центра")
+}
+
+Rel(OperatorBank, CallCenterBank, "Работает с системой", "HTTPS")
+Rel(CallCenterBank, DepositRateService, "Запрашивает ставки по ставкам", "HTTPS/REST")
+Rel(DepositRateService, RateDatabase, "CRUD операции", "ADO.NET")
+
+Rel(DepositRateService, FileExportAdapter, "Передает данные для выгрузки", "HTTPS/REST")
+Rel(FileExportAdapter, PartnerSFTP, "Загружает файл со ставками", "SFTP")
+Rel(PartnerSystem, PartnerSFTP, "Забирает файл для обновления", "")
+Rel(OperatorPartner, PartnerSystem, "Работает с системой", "")
+
+@enduml

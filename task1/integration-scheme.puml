@@ -1,0 +1,58 @@
+@startuml
+skinparam defaultTextAlignment center
+
+actor "Клиент" as Customer
+
+package "Контур банка" {
+    package "Подразделение фронт-офиса" {
+        actor "Сотрудник\nФронт-офиса" as FrontOffice
+        actor "Оператор\nкол-центра банка" as OpCallCenterBank
+    }
+
+    package "Подразделение бэк-офиса" {
+        actor "Сотрудник\nДепозитного бэк-офиса" as DepositBackOffice
+        actor "Сотрудник\nКредитного бэк-офиса" as CreditBackOffice
+
+    }
+
+
+    package "Цифровые каналы" {
+        component "Сайт" as Website
+        component "Интернет-банк" as InternetBank
+        component "Система кол-центра" as CallCenterBank
+    }
+
+    component "Автоматизированная\nбанковская\nсистема" as ABS
+
+    component "СМС-шлюз" as SMS_Gate
+
+}
+
+package "Внешний подрядчик" {
+    actor "Оператор\nпартнерского кол-центра" as OpCallCenterPartner
+
+    component "Партнёрский\nкол-центр" as CallCenterPartner
+}
+
+component "Сайт Центробанка" as CB
+
+Customer --> OpCallCenterBank : "Консультация,\nобращение"
+OpCallCenterBank ---> CallCenterBank : "Регистрация\nпредзаявки\n на депозит"
+Customer --> OpCallCenterPartner : "Консультация"
+OpCallCenterPartner --> CallCenterPartner : ""
+Customer --> FrontOffice : "Открытие депозита"
+FrontOffice -> ABS : "Открытие депозита,\nпечать документов,\nприкрепление документов"
+CallCenterBank ..> ABS : "Интеграция\nпредзаявки"
+ABS --> SMS_Gate : "Отправка\nуведомлений\nклиенту"
+DepositBackOffice -> ABS : "Обработка заявок\nиз кол-центра"
+CreditBackOffice ----> CB : "Запрос ключевой ставки (ежедневно)"
+CreditBackOffice --> DepositBackOffice : "Расчет\nдепозитных ставок\nи кредитного риска\nклиента\n(Email)"
+DepositBackOffice ---> CreditBackOffice : "Расчет кредитных\nставок\n(Email)"
+CreditBackOffice --> ABS : "Расчет кредитного\nриска клиента"
+DepositBackOffice --> ABS : "Обработка заявок\nна депозиты"
+
+Customer --> Website : "Просмотр\nинформации"
+Customer -> InternetBank : "Платежи, открытие\nдебетовых карт"
+InternetBank <-[dashed]-> ABS : "Платежи, открытие\nдебетовых карт"
+
+@enduml

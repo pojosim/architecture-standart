@@ -1,0 +1,71 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Система открытия депозитов онлайн (MVP) - Диаграмма контейнеров
+
+Person(CustomerNew, "Новый клиент", "Хочет открыть депозит, но не является клиентом банка")
+Person(CustomerExists, "Существующий клиент", "Клиент банка с доступом к интернет-банку")
+Person(OperatorCallCenter, "Оператор кол-центра банка", "Обрабатывает заявки с сайта, консультирует клиентов")
+Person(ManagerDepositBackOffice, "Сотрудник депозитного бэк-офиса", "Обрабатывает и подтверждает заявки из интернет-банка в АБС")
+
+System_Boundary(Context-DigitalChannels, "Цифровые каналы") {
+    Container(WebsiteFrontend, "Веб-интерфейс", "PHP, React.js", "Пользовательский интерфейс сайта банка")
+    Container(WebsiteBFF, "BFF gateway", "PHP, Lavarel", "API для сайта, обработка заявок новых клиентов")
+    Container(InternetBank, "Интернет-банк", "ASP.NET MVC 4.5", "Клиен-серверная система личного кабинета клиента")
+    Container(InternetBankBackend, "Backend интернет-банка", "C# .NET Core", "API для интернет банка, оркесрация запросов")
+}
+
+System_Boundary(Context-DepositRate, "Контекст управления ставками") {
+    Container(DepositRateService, "Сервис управления ставками", "Java", "Расчет, хранение и предоставление ставок по депозитам")
+    ContainerDb(DepositRateDb, "База данных ставок", "PostgresSQL", "Хранит продукты, базовые и персональные ставки")
+}
+
+System_Boundary(Context-ABS, "Контекст ядра банковской системы") {
+    Container(ABSAdapter, "Адаптер АБС", "C# .NET Core", "Единая точка входа для интеграции с АБС, кеширует и трансформирует запросы")
+    Container(ABS, "Автоматизированная банковская система", "Delphi", "Система для учета всех операций")
+    ContainerDb(ABS_Database, "База данных АБС", "Oracle", "Основное хранилище данных банка")
+    Container(ABS_DepositModule, "Модуль депозитов АБС", "Delphi", "Обработка депозитных операций")
+    Container(ABS_ClientModule, "Модуль клиентов АБС", "Delphi", "Хранение данных клиентов")
+}
+
+Container(CallCenter, "Кол-центра банка", "ReactJS, Java, PostgreSQL", "CRM система для кол-центра банка (платформа подрядчика)")
+Container(SMS_Gate, "СМС-шлюз", "Поддерживается IT-отделом", "Интерфейс для отправки SMS через телеком-оператора")
+
+System_Ext(TelecomOperator, "Телеком-оператор", "Внешний сервис для отправки SMS")
+System_Ext(CbWebsite, "Сайт Центробанка", "API для получения ключевой ставки")
+
+Rel(CustomerNew, WebsiteFrontend, "Просматривает продукты, оставляет заявку", "HTTPS")
+Rel(WebsiteFrontend, WebsiteBFF, "Вызывает API", "HTTPS/REST")
+Rel(WebsiteBFF, CallCenter, "Передает заявку нового клиента", "HTTPS/REST (интеграция)")
+Rel(WebsiteBFF, DepositRateService, "Запрашивает актуальные ставки для отображения", "HTTPS/REST")
+
+Rel(CustomerExists, InternetBank, "Входит, просматривает продукты, подает заявку", "HTTPS")
+Rel(InternetBank, InternetBankBackend, "Вызывает API", "HTTPS/REST")
+Rel(InternetBankBackend, DepositRateService, "Запрашивает ставки (общие и персональные)", "HTTPS/REST")
+Rel(InternetBankBackend, ABSAdapter, "Отправляет заявку на открытие депозита", "HTTPS/REST")
+Rel(InternetBankBackend, ABSAdapter, "Отправляет SMS для подтверждения операции (через ABSAdapter)", "HTTPS/REST")
+
+Rel(OperatorCallCenter, CallCenter, "Работает с заявками, звонит клиентам", "HTTPS")
+Rel(CallCenter, DepositRateService, "Запрашивает расчет спец. ставок для клиентов", "HTTPS/REST")
+Rel(CallCenter, ABSAdapter, "Создает предварительные заявки на депозиты", "HTTPS/REST")
+
+Rel(ManagerDepositBackOffice, ABSAdapter, "Обрабатывает и подтверждает заявки на депозиты", "Desktop client (Delphi)")
+
+Rel(DepositRateService, ABSAdapter, "Запрашивает данные клиента для персонализации ставок", "HTTPS/REST")
+Rel(DepositRateService, CbWebsite, "Получает актуальную ключевую ставку", "HTTPS/REST (ежедневно)")
+Rel(DepositRateService, DepositRateDb, "CRUD операции", "JDBC")
+
+Rel(ABSAdapter, ABS, "Вызывает API", "API АБС")
+Rel(ABSAdapter, ABS_DepositModule, "Создает/обрабатывает заявки на депозиты", "API АБС")
+Rel(ABSAdapter, ABS_ClientModule, "Запрашивает данные клиента", "API АБС")
+Rel(ABSAdapter, SMS_Gate, "Отправляет SMS для подтверждения операции", "HTTPS/REST")
+
+Rel(ABS_DepositModule, ABS_Database, "CRUD операции", "PL/SQL")
+Rel(ABS_DepositModule, SMS_Gate, "отправляет клиенту SMS-уведомление об открытии депозита ", "HTTPS/REST")
+Rel(ABS_ClientModule, ABS_Database, "CRUD операции", "PL/SQL")
+
+Rel(ABS, ABS_Database, "CRUD операции", "PL/SQL")
+
+Rel(SMS_Gate, TelecomOperator, "Передает SMS для доставки", "Собственный протокол")
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Система открытия депозитов онлайн (MVP) - Контекстная диаграмма
+
+Person(CustomerNew, "Новый клиент", "Хочет открыть депозит, но не является клиентом банка")
+Person(CustomerExists, "Существующий клиент", "Клиент банка с доступом к интернет-банку")
+Person(OpCallCenterBank, "Оператор кол-центра банка", "Обрабатывает заявки с сайта, консультирует клиентов")
+Person(DepositBackOffice, "Сотрудник Депозитного бэк-офиса", "Обрабатывает и подтверждает заявки из интернет-банка в АБС")
+
+System(Website, "Сайт банка", "Предоставляет информацию о депозитах и принимает заявки от новых клиентов")
+System(InternetBank, "Интернет-банк", "Позволяет существующим клиентам подавать заявки на депозиты")
+System(CallCenterBank, "Система кол-центра банка", "CRM-система от подрядчика для операторов кол-центра")
+System(ABS, "АБС", "Автоматизированная банковская система для учета всех операций")
+System(DepositRateService, "Сервис управления ставками", "Новый компонент для расчета и хранения ставок по депозитам")
+System(SMS_Gate, "СМС-шлюз телеком-оператора", "Сервис для отправки SMS-уведомлений")
+
+System_Ext(TelecomOperator, "Телеком-оператор", "Внешний сервис для отправки SMS-уведомлений")
+System_Ext(CbWebsite, "Сайт Центробанка", "Хранит информацию по ключевым ставкам")
+
+Rel(CustomerNew, Website, "Просматривает доступные депозиты, оставляет заявку")
+Rel(CustomerExists, InternetBank, "Просматривает доступные депозиты, подает заявку с подтверждением по SMS")
+Rel(OpCallCenterBank, CallCenterBank, "Работает с заявками, звонит клиентам")
+Rel(DepositBackOffice, ABS, "Обрабатывает и подтверждает заявки на депозиты")
+
+Rel(Website, CallCenterBank, "Передает заявки новых клиентов")
+Rel(InternetBank, DepositRateService, "Запрашивает актуальные и персонализированные ставки")
+Rel(InternetBank, ABS, "Отправляет заявки (опосредованно, через адаптер)")
+Rel(CallCenterBank, DepositRateService, "Запрашивает расчет спец. ставок для клиентов")
+Rel(CallCenterBank, ABS, "Создает предварительные заявки")
+Rel(DepositRateService, ABS, "Запрашивает данные клиента для персонализации")
+Rel(DepositRateService, CbWebsite, "Запрашивает актуальную ключевую ставку")
+Rel(ABS, SMS_Gate, "Инициирует отправку SMS-уведомлений")
+Rel(SMS_Gate, TelecomOperator, "Отправка SMS-уведомления клиенту")
+
+@enduml
